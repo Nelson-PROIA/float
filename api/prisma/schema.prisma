@@ -6,6 +6,7 @@ model User {
   email             String     @unique
   name              String
   role              String     @default("user")
+  dailySpendLimit   Float      @default(500)
   createdAt         DateTime   @default(now())
   sentTransfers     Transfer[] @relation("Sender")
   receivedTransfers Transfer[] @relation("Recipient")
