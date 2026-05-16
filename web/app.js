@@ -1,31 +1,52 @@
 // Float frontend - v0.2
-const API = "/api";
-const TOKEN = "user_alex_demo";
 const DAILY_LIMIT = 500;
 
-async function fetchActivity() {
-  const res = await fetch(`${API}/transfers`, {
-    headers: { Authorization: `Bearer ${TOKEN}` },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+const MOCK_ACTIVITY = [
+  {
+    direction: "sent",
+    recipientId: "marc_dubois",
+    amount: 30.0,
+    memo: "Pizza night",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    direction: "sent",
+    recipientId: "jules_renard",
+    amount: 75.0,
+    memo: "Concert ticket",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    direction: "received",
+    senderId: "bank_deposit",
+    amount: 1500.0,
+    memo: "Bank deposit",
+    createdAt: "2026-05-14T09:12:00Z",
+  },
+  {
+    direction: "received",
+    senderId: "lea_martin",
+    amount: 45.0,
+    memo: "Dinner split",
+    createdAt: "2026-05-13T20:05:00Z",
+  },
+  {
+    direction: "received",
+    senderId: "float_team",
+    amount: 25.0,
+    memo: "Welcome bonus",
+    createdAt: "2026-05-12T16:40:00Z",
+  },
+  {
+    direction: "received",
+    senderId: "bank_deposit",
+    amount: 500.0,
+    memo: "Bank deposit",
+    createdAt: "2026-05-09T08:05:00Z",
+  },
+];
 
-async function sendMoney(recipientId, amount, memo) {
-  const res = await fetch(`${API}/transfers`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ recipientId, amount, memo }),
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
+const activity = [...MOCK_ACTIVITY];
 
 function renderActivity(items) {
   const list = document.getElementById("activityList");
@@ -71,6 +92,18 @@ function updateSpentToday(items) {
     `${Math.min((spent / DAILY_LIMIT) * 100, 100)}%`;
 }
 
+function showToast(message) {
+  const existing = document.getElementById("toast");
+  if (existing) existing.remove();
+  const toast = document.createElement("div");
+  toast.id = "toast";
+  toast.className =
+    "fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-4 py-2 rounded-full shadow-lg";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
@@ -78,30 +111,18 @@ function formatDate(s) {
   return new Date(s).toLocaleDateString();
 }
 
-document.getElementById("sendBtn").addEventListener("click", async () => {
-  const recipientId = prompt("Send to (user ID):");
-  if (!recipientId) return;
-  const amount = parseFloat(prompt("Amount:"));
-  if (!amount) return;
-  const memo = prompt("Memo (optional):") || undefined;
-  try {
-    await sendMoney(recipientId, amount, memo);
-    await init();
-  } catch (err) {
-    alert(err.message);
-  }
+document.getElementById("sendBtn").addEventListener("click", () => {
+  activity.unshift({
+    direction: "sent",
+    recipientId: "demo_friend",
+    amount: 12.0,
+    memo: "Demo transfer",
+    createdAt: new Date().toISOString(),
+  });
+  renderActivity(activity);
+  updateSpentToday(activity);
+  showToast("Demo: transfer simulated");
 });
 
-async function init() {
-  try {
-    const data = await fetchActivity();
-    renderActivity(data.activity);
-    updateSpentToday(data.activity);
-  } catch (err) {
-    console.error(err);
-    document.getElementById("activityList").innerHTML =
-      `<li class="px-6 py-8 text-center text-slate-400 text-sm">Failed to load.</li>`;
-  }
-}
-
-init();
+renderActivity(activity);
+updateSpentToday(activity);
